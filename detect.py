@@ -34,8 +34,13 @@ import os
 import platform
 import sys
 from pathlib import Path
+import RPi.GPIO as GPIO
 
 import torch
+
+GPIO.setmode(GPIO.BCM)
+relay_pin = 17  # Change this to your relay pin number
+GPIO.setup(relay_pin, GPIO.OUT)
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -196,6 +201,14 @@ def run(
                         annotator.box_label(xyxy, label, color=colors(c, True))
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
+                        
+                    if len(det):
+                # Control the relay when an object is detected
+                        GPIO.output(relay_pin, GPIO.HIGH)  # Turn on the relay
+                        time.sleep(3)  # Keep the relay on for 3 seconds
+                        GPIO.output(relay_pin, GPIO.LOW)  # Turn off the relay
+                        
+                        GPIO.cleanup()  # Release GPIO
 
             # Stream results
             im0 = annotator.result()
